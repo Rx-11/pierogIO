@@ -38,6 +38,19 @@ const orderArb = fc.record({
   items: fc.array(orderItemArb, { minLength: 1, maxLength: 5 })
 });
 
+const { deliveryFee } = require('../../src/delivery');
+const profileArb = fc.record({
+  tier: tierArb
+});
+
+const deliveryArb = fc.record({
+  zone: zoneArb,
+  rush: fc.boolean()
+});
+
+const couponArb = fc.option(fc.constantFrom('PIEROGI-BOGO', 'FIRST10'));
+
+
 
 // ------------------------------------------------------------------------------
 // To test discounts, tax, delivery and total, you will need to add more
@@ -81,6 +94,47 @@ describe('Property-Based Tests for Orders', () => {
     //     { numRuns: 50 } // you can adjust the number of runs as needed
     //   );
     // });
+
+//     it('discounts should always be a non-negative integer', () => {
+//   fc.assert(
+//     fc.property(orderArb, profileArb, couponArb, (order, profile, coupon) => {
+//       const result = discounts(order, profile, coupon);
+//       return result >= 0 && Number.isInteger(result);
+//     }),
+//     { numRuns: 50 }
+//   );
+// });
+
+it('tax should always be a non-negative integer', () => {
+  fc.assert(
+    fc.property(orderArb, deliveryArb, (order, delivery) => {
+      const result = tax(order, delivery);
+      return result >= 0 && Number.isInteger(result);
+    }),
+    { numRuns: 50 }
+  );
+});
+
+it('delivery fee should always be a non-negative integer', () => {
+  fc.assert(
+    fc.property(orderArb, deliveryArb, profileArb, (order, delivery, profile) => {
+      const result = deliveryFee(order, delivery, profile);
+      return result >= 0 && Number.isInteger(result);
+    }),
+    { numRuns: 50 }
+  );
+});
+
+it('total should always be a non-negative integer', () => {
+  fc.assert(
+    fc.property(orderArb, profileArb, deliveryArb, couponArb, (order, profile, delivery, coupon) => {
+      const context = { profile, delivery, coupon };
+      const result = total(order, context);
+      return result >= 0 && Number.isInteger(result);
+    }),
+    { numRuns: 50 }
+  );
+});
 
   });
 });
